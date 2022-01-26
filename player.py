@@ -1,5 +1,6 @@
 import random
 
+import numpy as np
 import pygame
 from variables import global_variables
 from nn import NeuralNetwork
@@ -35,26 +36,47 @@ class Player(pygame.sprite.Sprite):
         if self.game_mode == "Neuroevolution":
             self.fitness = 0  # Initial fitness
 
-            layer_sizes = [3, 10, 2]  # TODO (Design your architecture here by changing the values)
+            layer_sizes = [10, 18, 2]  # TODO (Design your architecture here by changing the values)
             self.nn = NeuralNetwork(layer_sizes)
 
     def think(self, screen_width, screen_height, obstacles, player_x, player_y):
         """
-        Creates input vector of the neural network and determines the gravity according to neural network's output.
+            Creates input vector of the neural network and determines the gravity according to neural network's output.
 
-        :param screen_width: Game's screen width which is 604.
-        :param screen_height: Game's screen height which is 800.
-        :param obstacles: List of obstacles that are above the player. Each entry is a dictionary having 'x' and 'y' of
-        the obstacle as the key. The list is sorted based on the obstacle's 'y' point on the screen. Hence, obstacles[0]
-        is the nearest obstacle to our player. It is also worthwhile noting that 'y' range is in [-100, 656], such that
-        -100 means it is off screen (Topmost point) and 656 means in parallel to our player's 'y' point.
-        :param player_x: 'x' position of the player
-        :param player_y: 'y' position of the player
+            :param screen_width: Game's screen width which is 604.
+            :param screen_height: Game's screen height which is 800.
+            :param obstacles: List of obstacles that are above the player. Each entry is a dictionary having 'x' and 'y' of
+            the obstacle as the key. The list is sorted based on the obstacle's 'y' point on the screen. Hence, obstacles[0]
+            is the nearest obstacle to our player. It is also worthwhile noting that 'y' range is in [-100, 656], such that
+            -100 means it is off screen (Topmost point) and 656 means in parallel to our player's 'y' point.
+            :param player_x: 'x' position of the player
+            :param player_y: 'y' position of the player
         """
-        # TODO (change player's gravity here by calling self.change_gravity)
 
-        # This is a test code that changes the gravity based on a random number. Remove it before your implementation.
-        if random.randint(0, 2):
+        # TODO (change player's gravity here by calling self.change_gravity)
+        features = [player_x, player_y, player_x, player_y, player_x, player_y, player_x, player_y]
+        if len(obstacles) > 3:
+            features = [obstacles[0]['x'], obstacles[0]['y'], obstacles[1]['x'], obstacles[1]['y'], obstacles[2]['x'],
+                        obstacles[2]['y'], obstacles[3]['x'], obstacles[3]['y']]
+
+        elif len(obstacles) > 2:
+            features = [obstacles[0]['x'], obstacles[0]['y'], obstacles[1]['x'], obstacles[1]['y'], obstacles[2]['x'],
+                        obstacles[2]['y'], player_x, player_y]
+
+        elif len(obstacles) > 1:
+            features = [obstacles[0]['x'], obstacles[0]['y'], obstacles[1]['x'], obstacles[1]['y'], player_x, player_y,
+                        player_x, player_y]
+
+        elif len(obstacles) > 0:
+            features = [obstacles[0]['x'], obstacles[0]['y'], player_x, player_y, player_x, player_y, player_x,
+                        player_y]
+
+        nn_features = np.array(
+            [features[0], features[1], features[2], features[3], features[4], features[5], features[6], features[7],
+             player_x, player_y])
+        norm = np.linalg.norm(nn_features)
+        direction = self.nn.forward(nn_features / norm)
+        if direction[0][0] > direction[1][0]:
             self.change_gravity('left')
         else:
             self.change_gravity('right')
